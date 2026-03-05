@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTC Connect</title>
+    <link rel="icon" href="https://imgs.search.brave.com/cCoLHt71HLNwwz1u76R-sOUVVCI_wuawTYiGf4lEgLE/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWcu/ZmF2cG5nLmNvbS8w/LzE0LzI0L3RlbGVw/aG9uZS1jYWxsLW1p/bmltYWxpc3QtcGhv/bmUtY2FsbC1pY29u/LWRlc2lnbi1QZHpL/ZEtUdF90LmpwZw" type="image/svg+xml" sizes="any">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+
+        /* =====================================================
+           CSS VARIABLES — Design Tokens
+        ===================================================== */
+        :root {
+            /* Colors */
+            --bg-base:          #0a0a0b;
+            --bg-surface:       #141417;
+            --bg-glass:         rgba(30, 30, 35, 0.6);
+            --bg-glass-hover:   rgba(45, 45, 50, 0.8);
+
+            --accent-primary:   #6366f1;
+            --accent-hover:     #4f46e5;
+            --danger:           #ef4444;
+            --danger-hover:     #dc2626;
+            --success:          #10b981;
+
+            --text-main:        #f8fafc;
+            --text-muted:       #94a3b8;
+            --border-color:     rgba(255, 255, 255, 0.08);
+
+            /* Sizing */
+            --radius-sm:        8px;
+            --radius-md:        16px;
+            --radius-lg:        24px;
+            --radius-pill:      9999px;
+
+            /* Shadows */
+            --shadow-glass:     0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --shadow-glow:      0 0 15px rgba(99, 102, 241, 0.4);
+        }
+
+
+        /* =====================================================
+           RESET & BASE
+        ===================================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button {
+            cursor: pointer;
+            border: none;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar       { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+
+        /* =====================================================
+           UTILITIES
+        ===================================================== */
+        .glass-panel {
+            background: var(--bg-glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+        }
+
+
+        /* =====================================================
+           SCREEN SWITCHING
+           — Screens switch via .active class from app.js
+        ===================================================== */
+        .screen {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+        .screen.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+
+        /* =====================================================
+           SCREEN 1 — LOGIN
+        ===================================================== */
+        #login-screen {
+            background: radial-gradient(circle at center, #1a1b26 0%, var(--bg-base) 100%);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            padding: 40px;
+            border-radius: var(--radius-lg);
+            text-align: center;
+            box-shadow: var(--shadow-glass);
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+
+        .login-logo {
+            width: 60px; height: 60px;
+            background: linear-gradient(135deg, var(--accent-primary), #a855f7);
+            border-radius: var(--radius-md);
+            margin: 0 auto 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .login-card h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+        .login-card p  { color: var(--text-muted); font-size: 14px; margin-bottom: 32px; }
+
+        .login-input {
+            width: 100%;
+            padding: 16px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-main);
+            font-size: 16px;
+            margin-bottom: 24px;
+            transition: all 0.3s ease;
+        }
+        .login-input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.2);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent-primary);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: var(--radius-md);
+        }
+        .btn-primary:hover { background: var(--accent-hover); transform: translateY(-2px); }
+
+
+        /* =====================================================
+           SCREEN 2 — MAIN APP
+        ===================================================== */
+        #main-app {
+            flex-direction: column;
+            background: var(--bg-base);
+        }
+
+
+        /* ─── Top Navigation ──────────────────────────── */
+        .top-nav {
+            height: 70px;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            z-index: 100;
+            flex-shrink: 0;
+        }
+
+        .nav-left { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 18px; }
+        .nav-logo-small {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, var(--accent-primary), #a855f7);
+            border-radius: 8px;
+        }
+
+        .nav-center {
+            font-size: 14px;
+            color: var(--text-muted);
+            background: var(--bg-surface);
+            padding: 6px 16px;
+            border-radius: var(--radius-pill);
+            border: 1px solid var(--border-color);
+        }
+        .nav-center span { color: var(--text-main); font-weight: 500; }
+
+
+        /* ─── Online Users Dropdown ───────────────────── */
+        .nav-right     { position: relative; }
+        .dropdown-btn  {
+            background: var(--bg-glass);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: var(--radius-pill);
+            border: 1px solid var(--border-color);
+            display: flex; align-items: center; gap: 8px;
+            font-size: 14px;
+        }
+        .dropdown-btn:hover { background: var(--bg-glass-hover); }
+
+        .status-dot {
+            width: 8px; height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--success);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 120%; right: 0;
+            width: 250px;
+            padding: 8px;
+            border-radius: var(--radius-md);
+            opacity: 0; visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            z-index: 200;
+        }
+        .dropdown-menu.open { opacity: 1; visibility: visible; transform: translateY(0); }
+
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            transition: background 0.2s;
+        }
+        .user-item:hover { background: rgba(255,255,255,0.05); }
+        .user-info { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+        .avatar {
+            width: 32px; height: 32px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold;
+        }
+        .call-btn {
+            background: var(--success);
+            color: white;
+            padding: 6px 12px;
+            border-radius: var(--radius-pill);
+            font-size: 12px; font-weight: 600;
+        }
+
+
+        /* ─── Main Content ────────────────────────────── */
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+
+        /* ─── Video Area ──────────────────────────────── */
+        .video-area {
+            flex: 1;
+            position: relative;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .remote-video-container {
+            flex: 1;
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        /* Waiting placeholder */
+        .placeholder-text {
+            position: absolute;
+            color: var(--text-muted);
+            font-size: 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            z-index: 2;
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        video {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            background: transparent;
+        }
+
+
+        /* ─── Local Video Preview ─────────────────────── */
+        .local-video-container {
+            position: absolute;
+            bottom: 120px; right: 48px;
+            width: 240px; height: 160px;
+            background-color: var(--bg-surface);
+            border-radius: var(--radius-md);
+            border: 2px solid rgba(255,255,255,0.2);
+            box-shadow: var(--shadow-glass);
+            z-index: 10;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .local-label {
+            position: absolute;
+            bottom: 8px; left: 8px;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            color: white;
+            font-size: 12px; font-weight: 500;
+            padding: 4px 10px;
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 5;
+        }
+
+        /* Camera off state */
+        .local-video-container.video-off {
+            background: var(--bg-surface);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .local-video-container.video-off::before {
+            content: 'Camera Off';
+            color: var(--text-muted);
+            font-size: 14px; font-weight: 500;
+            position: absolute; z-index: 2;
+        }
+        .local-video-container.video-off video { display: none; }
+
+        /* Screen sharing state */
+        .sharing-badge {
+            display: none;
+            position: absolute; top: 8px; left: 8px;
+            background: rgba(99,102,241,0.85);
+            backdrop-filter: blur(4px);
+            color: white; font-size: 11px; font-weight: 600;
+            padding: 3px 8px;
+            border-radius: var(--radius-sm);
+            z-index: 5;
+        }
+        .local-video-container.is-sharing .sharing-badge { display: block; }
+        .local-video-container.is-sharing {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 2px var(--accent-primary), var(--shadow-glass);
+        }
+
+
+        /* ─── Call Controls ───────────────────────────── */
+        .controls-wrapper {
+            position: absolute;
+            bottom: 40px; left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+        }
+
+        .control-bar {
+            display: flex;
+            gap: 16px;
+            padding: 12px 24px;
+            border-radius: var(--radius-pill);
+        }
+
+        .ctrl-btn {
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+        .ctrl-btn svg     { width: 22px; height: 22px; fill: currentColor; }
+        .ctrl-btn:hover   { background: rgba(255,255,255,0.2); transform: scale(1.1); }
+
+        /* Muted / Off state — red strikethrough */
+        .ctrl-btn.off { background: var(--bg-glass); color: var(--danger); }
+        .ctrl-btn.off::after {
+            content: '';
+            position: absolute;
+            width: 2px; height: 30px;
+            background: currentColor;
+            transform: rotate(45deg);
+        }
+
+        /* End call button */
+        .ctrl-btn.end-call {
+            background: var(--danger);
+            box-shadow: 0 0 15px rgba(239,68,68,0.4);
+        }
+        .ctrl-btn.end-call:hover { background: var(--danger-hover); }
+
+        /* Chat button — active state */
+        .ctrl-btn.chat-toggle.active {
+            background: var(--accent-primary);
+            box-shadow: var(--shadow-glow);
+        }
+
+        /* Screen share button — active state */
+        .ctrl-btn.screen-share.active {
+            background: var(--accent-primary);
+            box-shadow: var(--shadow-glow);
+        }
+
+
+        /* ─── Chat Panel ──────────────────────────────── */
+        .chat-panel {
+            width: 340px;
+            background: var(--bg-surface);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: absolute;
+            right: 0; top: 0;
+            height: 100%;
+            z-index: 30;
+        }
+        .chat-panel.open { transform: translateX(0); position: relative; }
+
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-header h3 { font-size: 16px; font-weight: 600; }
+        .close-chat { background: transparent; color: var(--text-muted); font-size: 20px; }
+        .close-chat:hover { color: white; }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* ─── Message Bubbles ─────────────────────────── */
+        .msg {
+            max-width: 85%;
+            padding: 12px 16px;
+            font-size: 14px;
+            line-height: 1.4;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .msg.received {
+            align-self: flex-start;
+            background: var(--bg-glass);
+            border-radius: 16px 16px 16px 4px;
+        }
+        .msg.sent {
+            align-self: flex-end;
+            background: var(--accent-primary);
+            color: white;
+            border-radius: 16px 16px 4px 16px;
+        }
+
+        .msg-text { font-size: 14px; }
+        .msg-time {
+            font-size: 10px;
+            opacity: 0.5;
+            align-self: flex-end;
+        }
+
+
+        /* ─── Typing Indicator ────────────────────────── */
+        #typingIndicator {
+            display: flex;
+            gap: 4px;
+            padding: 8px 12px;
+            align-items: center;
+        }
+
+        .dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #aaa;
+            animation: bounce 1s infinite;
+        }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50%       { transform: translateY(-6px); }
+        }
+
+
+        /* ─── Chat Input ──────────────────────────────── */
+        .chat-input {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 8px;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 12px 16px;
+            background: var(--bg-base);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-pill);
+            color: white;
+            outline: none;
+        }
+        .chat-input input:focus { border-color: var(--accent-primary); }
+
+        .send-btn {
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            color: white;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .send-btn:hover { background: var(--accent-hover); }
+
+        /* File upload button */
+        .file-btn {
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px 8px;
+            opacity: 0.7;
+        }
+        .file-btn:hover { opacity: 1; }
+
+
+        /* =====================================================
+           RESPONSIVE — Mobile
+        ===================================================== */
+        @media (max-width: 768px) {
+            .nav-center { display: none; }
+            .video-area { padding: 12px; }
+
+            .local-video-container {
+                width: 120px; height: 160px;
+                bottom: 100px; right: 24px;
+            }
+
+            .controls-wrapper { bottom: 20px; width: 90%; }
+            .control-bar { justify-content: space-between; width: 100%; padding: 12px; }
+
+            .chat-panel {
+                position: fixed;
+                width: 100%; height: 100%;
+                z-index: 200;
+            }
+
+            .dropdown-menu {
+                position: fixed;
+                top: 70px; left: 0; right: 0; bottom: 0;
+                width: 100%; height: calc(100vh - 70px);
+                border-radius: 0;
+                background: var(--bg-base);
+                overflow-y: auto;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- =====================================================
+         SCREEN 1 — LOGIN
+    ===================================================== -->
+    <div id="login-screen" class="screen active">
+        <div class="login-card glass-panel">
+            <div class="login-logo">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
+                    <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14v-4z"/>
+                    <path d="M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+                </svg>
+            </div>
+            <h1>Join the Video Chat</h1>
+            <p>Enter your username to continue</p>
+            <input type="text" id="username-input" class="login-input" placeholder="e.g. Vipin Yadav" autocomplete="off"/>
+            <button id="join-btn" class="btn-primary">Join Now</button>
+        </div>
+    </div>
+
+
+    <!-- =====================================================
+         SCREEN 2 — MAIN APP
+    ===================================================== -->
+    <div id="main-app" class="screen">
+
+        <!-- ─── Top Navigation ──────────────────────── -->
+        <nav class="top-nav">
+            <div class="nav-left">
+                <div class="nav-logo-small">
+                    <svg style="margin:6px" width="20" height="20" viewBox="0 0 24 24" fill="white">
+                        <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14v-4z"/>
+                        <path d="M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+                    </svg>
+                </div>
+                <span>RTC Connect</span>
+            </div>
+
+            <!-- Connection status — updated from app.js -->
+            <div class="nav-center" id="nav-status"></div>
+
+            <!-- Online users dropdown -->
+            <div class="nav-right">
+                <button class="dropdown-btn" id="online-btn">
+                    <div class="status-dot"></div>
+                    <span id="online-count-text">Online (0)</span> ▾
+                </button>
+                <div class="dropdown-menu glass-panel" id="online-menu"></div>
+            </div>
+        </nav>
+
+
+        <!-- ─── Main Content ────────────────────────── -->
+        <main class="main-content">
+
+            <!-- ─── Video Area ───────────────────────── -->
+            <div class="video-area">
+
+                <!-- Remote video -->
+                <div class="remote-video-container" id="remote-video-container">
+                    <div class="placeholder-text" id="video-placeholder">
+                        <div class="spinner"></div>
+                        <span>Waiting for connection...</span>
+                    </div>
+                    <video id="remote-video-element" autoplay playsinline style="transform: scaleX(-1);"></video>
+                </div>
+
+                <!-- Local video preview -->
+                <div class="local-video-container" id="local-video-container">
+                    <div class="local-label" id="local-label">You</div>
+                    <div class="sharing-badge">🖥 Sharing</div>
+                    <video id="local-video-element" autoplay playsinline muted style="transform: scaleX(-1);"></video>
+                </div>
+
+                <!-- ─── Call Controls ────────────────── -->
+                <div class="controls-wrapper">
+                    <div class="control-bar glass-panel">
+
+                        <!-- Mic toggle -->
+                        <button class="ctrl-btn" id="btn-mic" title="Mute/Unmute">
+                            <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+                        </button>
+
+                        <!-- Video toggle -->
+                        <button class="ctrl-btn" id="btn-video" title="Video On/Off">
+                            <svg viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14v-4z"/><path d="M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg>
+                        </button>
+
+                        <!-- Screen share toggle -->
+                        <button class="ctrl-btn screen-share" id="btn-screen" title="Share Screen">
+                            <svg viewBox="0 0 24 24"><path d="M20 3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h6v2H8v2h8v-2h-2v-2h6c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H4V5h16v11z"/><path d="M9.5 15.5l1.77-2.37L12.5 15l2.27-3L17 15.5H9.5z"/></svg>
+                        </button>
+
+                        <!-- Chat toggle -->
+                        <button class="ctrl-btn chat-toggle" id="btn-chat" title="Toggle Chat">
+                            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                        </button>
+
+                        <!-- End call -->
+                        <button class="ctrl-btn end-call" id="btn-end" title="End Call">
+                            <svg viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+                        </button>
+
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- ─── Chat Panel ────────────────────────── -->
+            <aside class="chat-panel" id="chat-panel">
+
+                <div class="chat-header">
+                    <h3>Meeting Chat</h3>
+                    <button class="close-chat" id="close-chat">✖</button>
+                </div>
+
+                <!-- Messages appear here dynamically from app.js -->
+                <div class="chat-messages" id="chat-messages"></div>
+
+                <!-- Typing indicator — shown when remote peer is typing -->
+                <div id="typingIndicator" style="display:none">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+
+                <!-- Chat input -->
+                <div class="chat-input">
+                    <input type="text" id="chat-input-field" placeholder="Type a message..." autocomplete="off"/>
+                    <button class="send-btn" id="btn-send">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                    </button>
+                </div>
+
+            </aside>
+
+        </main>
+    </div>
+
+
+    <!-- =====================================================
+         SCRIPTS
+         Socket.IO CDN loaded first — app.js depends on it
+    ===================================================== -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script type="module" src="./app.js"></script>
+
+</body>
+</html>
