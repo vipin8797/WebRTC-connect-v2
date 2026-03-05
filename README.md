@@ -2,7 +2,7 @@
 
 A peer-to-peer video calling web application built from scratch using **WebRTC**, **Socket.IO**, and **Vanilla JavaScript** — with a clean, modular architecture.
 
-Live Demo → [web-rtc-connect-v2.onrender.com](https://web-rtc-connect-v2.onrender.com)
+Live Demo → [web-rtc-connect-v2.onrender.com](https://webrtc-connect-v2.onrender.com/)
 
 ---
 
@@ -471,7 +471,7 @@ This app requires a **persistent server** for Socket.IO — it cannot be deploye
 
 **Recommended platforms:**
 - [Render](https://render.com) — Free tier available
-- [Railway](https://railway.app) — Simple GitHub deploy
+
 
 ---
 
