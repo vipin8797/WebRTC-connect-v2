@@ -824,25 +824,25 @@ getFile(({ url, name }) => {
 });
 
 // Handle file selection for sending
-fileInput.addEventListener('change', () => {
-    const file = fileInput.files[0];
-    if (!file) return;
+// fileInput.addEventListener('change', () => {
+//     const file = fileInput.files[0];
+//     if (!file) return;
 
-    // 🔌 CONNECT: Send file via data channel
-    // -----------------------------------------------
-    sendFile(file);
-    // -----------------------------------------------
+//     // 🔌 CONNECT: Send file via data channel
+//     // -----------------------------------------------
+//     sendFile(file);
+//     // -----------------------------------------------
 
-    // Show sent file in chat
-    appendChatMessage({
-        fileUrl: URL.createObjectURL(file),
-        fileName: file.name,
-        time: new Date().toLocaleTimeString(),
-    }, 'sent');
+//     // Show sent file in chat
+//     appendChatMessage({
+//         fileUrl: URL.createObjectURL(file),
+//         fileName: file.name,
+//         time: new Date().toLocaleTimeString(),
+//     }, 'sent');
 
-    // Reset file input
-    fileInput.value = '';
-});
+//     // Reset file input
+//     fileInput.value = '';
+// });
 
 // Toggle chat panel
 function toggleChat() {
